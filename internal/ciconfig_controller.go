@@ -17,7 +17,10 @@ typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 "k8s.io/client-go/tools/record"
 "k8s.io/client-go/util/workqueue"
 
-clientset "github.com/nistal97/pkg/generated/clientset/versioned"
+clientset "github.com/nistal97/crd_controller/pkg/generated/clientset/versioned"
+listers "github.com/nistal97/crd_controller/pkg/generated/listers/tess.io/v1"
+informers "github.com/nistal97/crd_controller/pkg/generated/informers/externalversions/tess.io/v1"
+
 )
 
 
@@ -27,8 +30,8 @@ type CiConfigController struct {
 	// ciconfig clientset
 	ciconfig_clientset clientset.Interface
 
-	studentsLister listers.StudentLister
-	studentsSynced cache.InformerSynced
+	ciconfig_lister listers.CiConfigLister
+	ciconfig_Synced cache.InformerSynced
 
 	workqueue workqueue.RateLimitingInterface
 
@@ -38,8 +41,8 @@ type CiConfigController struct {
 // NewController returns a new student controller
 func NewController(
 	kubeclientset kubernetes.Interface,
-	studentclientset clientset.Interface,
-	studentInformer informers.StudentInformer) *Controller {
+	ciconfig_clientset clientset.Interface,
+	ciconfig_Informer informers.CiConfigInformer) *CiConfigController {
 
 	utilruntime.Must(studentscheme.AddToScheme(scheme.Scheme))
 	glog.V(4).Info("Creating event broadcaster")
