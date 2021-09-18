@@ -1,9 +1,11 @@
-module crd_controller
+module github.com/nistal97/crd_controller
 
 go 1.13
 
 require (
+	github.com/golang/glog v1.0.0
 	github.com/spf13/pflag v1.0.1
+	k8s.io/api v0.0.0-20190425012535-181e1f9c52c1
 	k8s.io/apimachinery v0.0.0-20190425132440-17f84483f500
 	k8s.io/client-go v0.0.0-20190425172711-65184652c889
 	k8s.io/code-generator v0.0.0-20190419212335-ff26e7842f9d
