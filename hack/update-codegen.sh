@@ -12,4 +12,4 @@ set -o pipefail
   github.com/nistal97/crd_controller/pkg/api \
   tess.io:v1 \
   --go-header-file $(pwd)/boilerplate.go.txt \
-  --output-base $(pwd)/../../
+  --output-base $(pwd)/../
