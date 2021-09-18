@@ -8,8 +8,8 @@ set -o pipefail
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
 ../vendor/k8s.io/code-generator/generate-groups.sh \
   "deepcopy,client,informer,lister" \
-  crd_controller/generated \
-  crd_controller/api \
+  crd_controller/pkg/generated \
+  crd_controller/pkg/api \
   tess.io:v1 \
   --go-header-file $(pwd)/boilerplate.go.txt \
   --output-base $(pwd)/../../
