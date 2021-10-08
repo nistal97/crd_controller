@@ -1,28 +1,37 @@
-package main
+package internal
 
 import (
-"fmt"
-"time"
+	"fmt"
+	"time"
 
-"github.com/golang/glog"
-corev1 "k8s.io/api/core/v1"
-"k8s.io/apimachinery/pkg/api/errors"
-"k8s.io/apimachinery/pkg/util/runtime"
-utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-"k8s.io/apimachinery/pkg/util/wait"
-"k8s.io/client-go/kubernetes"
-"k8s.io/client-go/kubernetes/scheme"
-typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-"k8s.io/client-go/tools/cache"
-"k8s.io/client-go/tools/record"
-"k8s.io/client-go/util/workqueue"
+	v1 "github.com/nistal97/crd_controller/pkg/api/tess.io/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
+	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog/v2"
 
-clientset "github.com/nistal97/crd_controller/pkg/generated/clientset/versioned"
-listers "github.com/nistal97/crd_controller/pkg/generated/listers/tess.io/v1"
-informers "github.com/nistal97/crd_controller/pkg/generated/informers/externalversions/tess.io/v1"
-
+	clientset "github.com/nistal97/crd_controller/pkg/generated/clientset/versioned"
+	scheme "github.com/nistal97/crd_controller/pkg/generated/clientset/versioned/scheme"
+	informers "github.com/nistal97/crd_controller/pkg/generated/informers/externalversions/tess.io/v1"
+	listers "github.com/nistal97/crd_controller/pkg/generated/listers/tess.io/v1"
 )
 
+const (
+	controllerAgentName = "ciconfig-controller"
+
+	// SuccessSynced is used as part of the Event 'reason' when a ciconfig is synced
+	SuccessSynced = "Synced"
+	// MessageResourceSynced is the message used for an Event fired when a ciconfig
+	// is synced successfully
+	MessageResourceSynced = "CiConfig synced successfully"
+)
 
 type CiConfigController struct {
 	// standard kubernetes clientset
@@ -30,84 +39,100 @@ type CiConfigController struct {
 	// ciconfig clientset
 	ciconfig_clientset clientset.Interface
 
-	ciconfig_lister listers.CiConfigLister
-	ciconfig_Synced cache.InformerSynced
+	ciconfigLister listers.CiConfigLister
+	ciconfigSynced cache.InformerSynced
 
+	// workqueue is a rate limited work queue. This is used to queue work to be
+	// processed instead of performing it as soon as a change happens. This
+	// means we can ensure we only process a fixed amount of resources at a
+	// time, and makes it easy to ensure we are never processing the same item
+	// simultaneously in two different workers.
 	workqueue workqueue.RateLimitingInterface
-
+	// recorder is an event recorder for recording Event resources to the
+	// Kubernetes API.
 	recorder record.EventRecorder
 }
 
-// NewController returns a new student controller
-func NewController(
+// NewController creates a new controller
+func NewCiConfigController(
 	kubeclientset kubernetes.Interface,
-	ciconfig_clientset clientset.Interface,
-	ciconfig_Informer informers.CiConfigInformer) *CiConfigController {
+	ciconfigclientset clientset.Interface,
+	ciconfigInformer informers.CiConfigInformer) *CiConfigController {
 
-	utilruntime.Must(studentscheme.AddToScheme(scheme.Scheme))
-	glog.V(4).Info("Creating event broadcaster")
+	utilruntime.Must(scheme.AddToScheme(scheme.Scheme))
+	klog.V(4).Info("Creating event broadcaster..")
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartLogging(glog.Infof)
-	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeclientset.CoreV1().Events("")})
+	eventBroadcaster.StartStructuredLogging(0)
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeclientset.CoreV1().Events("ciaas")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
-	controller := &Controller{
-		kubeclientset:    kubeclientset,
-		studentclientset: studentclientset,
-		studentsLister:   studentInformer.Lister(),
-		studentsSynced:   studentInformer.Informer().HasSynced,
-		workqueue:        workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Students"),
-		recorder:         recorder,
+	controller := &CiConfigController{
+		kubeclientset:      kubeclientset,
+		ciconfig_clientset: ciconfigclientset,
+		ciconfigLister:     ciconfigInformer.Lister(),
+		ciconfigSynced:     ciconfigInformer.Informer().HasSynced,
+		workqueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ciconfig"),
+		recorder:           recorder,
 	}
 
-	glog.Info("Setting up event handlers")
-	// Set up an event handler for when Student resources change
-	studentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.enqueueStudent,
+	klog.Info("Setting up event handlers")
+	// Set up an event handler for when ciconfig resources change
+	ciconfigInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: controller.enqueueCiconfig,
 		UpdateFunc: func(old, new interface{}) {
-			oldStudent := old.(*bolingcavalryv1.Student)
-			newStudent := new.(*bolingcavalryv1.Student)
-			if oldStudent.ResourceVersion == newStudent.ResourceVersion {
-				//版本一致，就表示没有实际更新的操作，立即返回
+			oldMydemo := old.(*v1.CiConfig)
+			newMydemo := new.(*v1.CiConfig)
+			if oldMydemo.ResourceVersion == newMydemo.ResourceVersion {
 				return
 			}
-			controller.enqueueStudent(new)
+			controller.enqueueCiconfig(new)
 		},
-		DeleteFunc: controller.enqueueStudentForDelete,
+		DeleteFunc: controller.enqueueCiconfigForDelete,
 	})
-
 	return controller
 }
 
-//在此处开始controller的业务
-func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
-	defer runtime.HandleCrash()
+// Run will set up the event handlers for types we are interested in, as well
+// as syncing informer caches and starting workers. It will block until stopCh
+// is closed, at which point it will shutdown the workqueue and wait for
+// workers to finish processing their current work items.
+func (c *CiConfigController) Run(threadiness int, stopCh <-chan struct{}) error {
+	defer utilruntime.HandleCrash()
 	defer c.workqueue.ShutDown()
 
-	glog.Info("开始controller业务，开始一次缓存数据同步")
-	if ok := cache.WaitForCacheSync(stopCh, c.studentsSynced); !ok {
+	// Start the informer factories to begin populating the informer caches
+	klog.Info("Starting ciconfig controller")
+
+	// Wait for the caches to be synced before starting workers
+	klog.Info("Waiting for informer caches to sync")
+	if ok := cache.WaitForCacheSync(stopCh, c.ciconfigSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
-	glog.Info("worker启动")
+	klog.Info("Starting workers")
+	// Launch workers to process resources
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
 
-	glog.Info("worker已经启动")
+	klog.Info("Started workers..")
 	<-stopCh
-	glog.Info("worker已经结束")
+	klog.Info("Shutting down workers..")
 
 	return nil
 }
 
-func (c *Controller) runWorker() {
+// runWorker is a long-running function that will continually call the
+// processNextWorkItem function in order to read and process a message on the
+// workqueue.
+func (c *CiConfigController) runWorker() {
 	for c.processNextWorkItem() {
 	}
 }
 
-// 取数据处理
-func (c *Controller) processNextWorkItem() bool {
+// processNextWorkItem will read a single work item off the workqueue and
+// attempt to process it, by calling the syncHandler.
+func (c *CiConfigController) processNextWorkItem() bool {
 
 	obj, shutdown := c.workqueue.Get()
 
@@ -117,89 +142,111 @@ func (c *Controller) processNextWorkItem() bool {
 
 	// We wrap this block in a func so we can defer c.workqueue.Done.
 	err := func(obj interface{}) error {
+		// We call Done here so the workqueue knows we have finished
+		// processing this item. We also must remember to call Forget if we
+		// do not want this work item being re-queued. For example, we do
+		// not call Forget if a transient error occurs, instead the item is
+		// put back on the workqueue and attempted again after a back-off
+		// period.
 		defer c.workqueue.Done(obj)
 		var key string
 		var ok bool
-
+		// We expect strings to come off the workqueue. These are of the
+		// form namespace/name. We do this as the delayed nature of the
+		// workqueue means the items in the informer cache may actually be
+		// more up to date that when the item was initially put onto the
+		// workqueue.
 		if key, ok = obj.(string); !ok {
-
+			// As the item in the workqueue is actually invalid, we call
+			// Forget here else we'd go into a loop of attempting to
+			// process a work item that is invalid.
 			c.workqueue.Forget(obj)
-			runtime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
+			utilruntime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
 			return nil
 		}
-		// 在syncHandler中处理业务
+		// Run the syncHandler, passing it the namespace/name string of the
+		// Ciconfig resource to be synced.
 		if err := c.syncHandler(key); err != nil {
-			return fmt.Errorf("error syncing '%s': %s", key, err.Error())
+			// Put the item back on the workqueue to handle any transient errors.
+			c.workqueue.AddRateLimited(key)
+			return fmt.Errorf("error syncing '%s': %s, requeuing", key, err.Error())
 		}
-
+		// Finally, if no error occurs we Forget this item so it does not
+		// get queued again until another change happens.
 		c.workqueue.Forget(obj)
-		glog.Infof("Successfully synced '%s'", key)
+		klog.Infof("Successfully synced '%s'", key)
 		return nil
 	}(obj)
 
 	if err != nil {
-		runtime.HandleError(err)
+		utilruntime.HandleError(err)
 		return true
 	}
 
 	return true
 }
 
-// 处理
-func (c *Controller) syncHandler(key string) error {
+// syncHandler compares the actual state with the desired, and attempts to
+// converge the two. It then updates the Status block of the ciconfig resource
+// with the current status of the resource.
+func (c *CiConfigController) syncHandler(key string) error {
+
 	// Convert the namespace/name string into a distinct namespace and name
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
-		runtime.HandleError(fmt.Errorf("invalid resource key: %s", key))
+		utilruntime.HandleError(fmt.Errorf("invalid resource key: %s", key))
 		return nil
 	}
 
-	// 从缓存中取对象
-	student, err := c.studentsLister.Students(namespace).Get(name)
+	// Get the ciconfig resource with this namespace/name
+	ciconfig, err := c.ciconfigLister.CiConfigs(namespace).Get(name)
 	if err != nil {
-		// 如果Student对象被删除了，就会走到这里，所以应该在这里加入执行
+		//not found, means already deleted
 		if errors.IsNotFound(err) {
-			glog.Infof("Student对象被删除，请在这里执行实际的删除业务: %s/%s ...", namespace, name)
-
+			utilruntime.HandleError(fmt.Errorf("ciconfig '%s' in work queue no longer exists", key))
 			return nil
 		}
-
-		runtime.HandleError(fmt.Errorf("failed to list student by: %s/%s", namespace, name))
-
+		runtime.HandleError(fmt.Errorf("failed to list ciconfig by: %s/%s", namespace, name))
 		return err
 	}
 
-	glog.Infof("这里是student对象的期望状态: %#v ...", student)
-	glog.Infof("实际状态是从业务层面得到的，此处应该去的实际状态，与期望状态做对比，并根据差异做出响应(新增或者删除)")
+	// If an error occurs during Update, we'll requeue the item so we can
+	// attempt processing again later. This could have been caused by a
+	// temporary network failure, or any other transient reason.
+	if err != nil {
+		return err
+	}
 
-	c.recorder.Event(student, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
+	c.recorder.Event(ciconfig, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
 }
 
-// 数据先放入缓存，再入队列
-func (c *Controller) enqueueStudent(obj interface{}) {
+// first in cache, then enqueue
+// Ciconfig -> namespace/name, then put into workqueue
+func (c *CiConfigController) enqueueCiconfig(obj interface{}) {
 	var key string
 	var err error
-	// 将对象放入缓存
+	// put obj in cache
 	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
 		runtime.HandleError(err)
 		return
 	}
 
-	// 将key放入队列
+	klog.Infof("enqueueCiconfig:" + key)
+	//put key in queue
 	c.workqueue.AddRateLimited(key)
 }
 
-// 删除操作
-func (c *Controller) enqueueStudentForDelete(obj interface{}) {
+func (c *CiConfigController) enqueueCiconfigForDelete(obj interface{}) {
 	var key string
 	var err error
-	// 从缓存中删除指定对象
+	// delete from cache
 	key, err = cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
 		runtime.HandleError(err)
 		return
 	}
-	//再将key放入队列
+	//put key in queue
+	klog.Infof("enqueueCiconfigForDelete:" + key)
 	c.workqueue.AddRateLimited(key)
 }
