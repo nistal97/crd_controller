@@ -25,8 +25,10 @@ import (
 )
 
 // CiConfigLister helps list CiConfigs.
+// All objects returned here must be treated as read-only.
 type CiConfigLister interface {
 	// List lists all CiConfigs in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.CiConfig, err error)
 	// CiConfigs returns an object that can list and get CiConfigs.
 	CiConfigs(namespace string) CiConfigNamespaceLister
@@ -57,10 +59,13 @@ func (s *ciConfigLister) CiConfigs(namespace string) CiConfigNamespaceLister {
 }
 
 // CiConfigNamespaceLister helps list and get CiConfigs.
+// All objects returned here must be treated as read-only.
 type CiConfigNamespaceLister interface {
 	// List lists all CiConfigs in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.CiConfig, err error)
 	// Get retrieves the CiConfig from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1.CiConfig, error)
 	CiConfigNamespaceListerExpansion
 }

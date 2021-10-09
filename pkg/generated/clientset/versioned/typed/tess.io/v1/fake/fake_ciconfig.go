@@ -18,6 +18,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	tessiov1 "github.com/nistal97/crd_controller/pkg/api/tess.io/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -38,7 +40,7 @@ var ciconfigsResource = schema.GroupVersionResource{Group: "tess.io", Version: "
 var ciconfigsKind = schema.GroupVersionKind{Group: "tess.io", Version: "v1", Kind: "CiConfig"}
 
 // Get takes name of the ciConfig, and returns the corresponding ciConfig object, and an error if there is any.
-func (c *FakeCiConfigs) Get(name string, options v1.GetOptions) (result *tessiov1.CiConfig, err error) {
+func (c *FakeCiConfigs) Get(ctx context.Context, name string, options v1.GetOptions) (result *tessiov1.CiConfig, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(ciconfigsResource, c.ns, name), &tessiov1.CiConfig{})
 
@@ -49,7 +51,7 @@ func (c *FakeCiConfigs) Get(name string, options v1.GetOptions) (result *tessiov
 }
 
 // List takes label and field selectors, and returns the list of CiConfigs that match those selectors.
-func (c *FakeCiConfigs) List(opts v1.ListOptions) (result *tessiov1.CiConfigList, err error) {
+func (c *FakeCiConfigs) List(ctx context.Context, opts v1.ListOptions) (result *tessiov1.CiConfigList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(ciconfigsResource, ciconfigsKind, c.ns, opts), &tessiov1.CiConfigList{})
 
@@ -71,14 +73,14 @@ func (c *FakeCiConfigs) List(opts v1.ListOptions) (result *tessiov1.CiConfigList
 }
 
 // Watch returns a watch.Interface that watches the requested ciConfigs.
-func (c *FakeCiConfigs) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeCiConfigs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(ciconfigsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a ciConfig and creates it.  Returns the server's representation of the ciConfig, and an error, if there is any.
-func (c *FakeCiConfigs) Create(ciConfig *tessiov1.CiConfig) (result *tessiov1.CiConfig, err error) {
+func (c *FakeCiConfigs) Create(ctx context.Context, ciConfig *tessiov1.CiConfig, opts v1.CreateOptions) (result *tessiov1.CiConfig, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(ciconfigsResource, c.ns, ciConfig), &tessiov1.CiConfig{})
 
@@ -89,7 +91,7 @@ func (c *FakeCiConfigs) Create(ciConfig *tessiov1.CiConfig) (result *tessiov1.Ci
 }
 
 // Update takes the representation of a ciConfig and updates it. Returns the server's representation of the ciConfig, and an error, if there is any.
-func (c *FakeCiConfigs) Update(ciConfig *tessiov1.CiConfig) (result *tessiov1.CiConfig, err error) {
+func (c *FakeCiConfigs) Update(ctx context.Context, ciConfig *tessiov1.CiConfig, opts v1.UpdateOptions) (result *tessiov1.CiConfig, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(ciconfigsResource, c.ns, ciConfig), &tessiov1.CiConfig{})
 
@@ -101,7 +103,7 @@ func (c *FakeCiConfigs) Update(ciConfig *tessiov1.CiConfig) (result *tessiov1.Ci
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeCiConfigs) UpdateStatus(ciConfig *tessiov1.CiConfig) (*tessiov1.CiConfig, error) {
+func (c *FakeCiConfigs) UpdateStatus(ctx context.Context, ciConfig *tessiov1.CiConfig, opts v1.UpdateOptions) (*tessiov1.CiConfig, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(ciconfigsResource, "status", c.ns, ciConfig), &tessiov1.CiConfig{})
 
@@ -112,7 +114,7 @@ func (c *FakeCiConfigs) UpdateStatus(ciConfig *tessiov1.CiConfig) (*tessiov1.CiC
 }
 
 // Delete takes name of the ciConfig and deletes it. Returns an error if one occurs.
-func (c *FakeCiConfigs) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeCiConfigs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(ciconfigsResource, c.ns, name), &tessiov1.CiConfig{})
 
@@ -120,15 +122,15 @@ func (c *FakeCiConfigs) Delete(name string, options *v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeCiConfigs) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(ciconfigsResource, c.ns, listOptions)
+func (c *FakeCiConfigs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(ciconfigsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &tessiov1.CiConfigList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched ciConfig.
-func (c *FakeCiConfigs) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *tessiov1.CiConfig, err error) {
+func (c *FakeCiConfigs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *tessiov1.CiConfig, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(ciconfigsResource, c.ns, name, pt, data, subresources...), &tessiov1.CiConfig{})
 

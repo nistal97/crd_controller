@@ -18,6 +18,7 @@ limitations under the License.
 package v1
 
 import (
+	"context"
 	"time"
 
 	v1 "github.com/nistal97/crd_controller/pkg/api/tess.io/v1"
@@ -36,15 +37,15 @@ type CiConfigsGetter interface {
 
 // CiConfigInterface has methods to work with CiConfig resources.
 type CiConfigInterface interface {
-	Create(*v1.CiConfig) (*v1.CiConfig, error)
-	Update(*v1.CiConfig) (*v1.CiConfig, error)
-	UpdateStatus(*v1.CiConfig) (*v1.CiConfig, error)
-	Delete(name string, options *metav1.DeleteOptions) error
-	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
-	Get(name string, options metav1.GetOptions) (*v1.CiConfig, error)
-	List(opts metav1.ListOptions) (*v1.CiConfigList, error)
-	Watch(opts metav1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.CiConfig, err error)
+	Create(ctx context.Context, ciConfig *v1.CiConfig, opts metav1.CreateOptions) (*v1.CiConfig, error)
+	Update(ctx context.Context, ciConfig *v1.CiConfig, opts metav1.UpdateOptions) (*v1.CiConfig, error)
+	UpdateStatus(ctx context.Context, ciConfig *v1.CiConfig, opts metav1.UpdateOptions) (*v1.CiConfig, error)
+	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
+	Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1.CiConfig, error)
+	List(ctx context.Context, opts metav1.ListOptions) (*v1.CiConfigList, error)
+	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.CiConfig, err error)
 	CiConfigExpansion
 }
 
@@ -63,20 +64,20 @@ func newCiConfigs(c *TessV1Client, namespace string) *ciConfigs {
 }
 
 // Get takes name of the ciConfig, and returns the corresponding ciConfig object, and an error if there is any.
-func (c *ciConfigs) Get(name string, options metav1.GetOptions) (result *v1.CiConfig, err error) {
+func (c *ciConfigs) Get(ctx context.Context, name string, options metav1.GetOptions) (result *v1.CiConfig, err error) {
 	result = &v1.CiConfig{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("ciconfigs").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of CiConfigs that match those selectors.
-func (c *ciConfigs) List(opts metav1.ListOptions) (result *v1.CiConfigList, err error) {
+func (c *ciConfigs) List(ctx context.Context, opts metav1.ListOptions) (result *v1.CiConfigList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -87,13 +88,13 @@ func (c *ciConfigs) List(opts metav1.ListOptions) (result *v1.CiConfigList, err 
 		Resource("ciconfigs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested ciConfigs.
-func (c *ciConfigs) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+func (c *ciConfigs) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -104,87 +105,90 @@ func (c *ciConfigs) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 		Resource("ciconfigs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a ciConfig and creates it.  Returns the server's representation of the ciConfig, and an error, if there is any.
-func (c *ciConfigs) Create(ciConfig *v1.CiConfig) (result *v1.CiConfig, err error) {
+func (c *ciConfigs) Create(ctx context.Context, ciConfig *v1.CiConfig, opts metav1.CreateOptions) (result *v1.CiConfig, err error) {
 	result = &v1.CiConfig{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("ciconfigs").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(ciConfig).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a ciConfig and updates it. Returns the server's representation of the ciConfig, and an error, if there is any.
-func (c *ciConfigs) Update(ciConfig *v1.CiConfig) (result *v1.CiConfig, err error) {
+func (c *ciConfigs) Update(ctx context.Context, ciConfig *v1.CiConfig, opts metav1.UpdateOptions) (result *v1.CiConfig, err error) {
 	result = &v1.CiConfig{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("ciconfigs").
 		Name(ciConfig.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(ciConfig).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *ciConfigs) UpdateStatus(ciConfig *v1.CiConfig) (result *v1.CiConfig, err error) {
+func (c *ciConfigs) UpdateStatus(ctx context.Context, ciConfig *v1.CiConfig, opts metav1.UpdateOptions) (result *v1.CiConfig, err error) {
 	result = &v1.CiConfig{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("ciconfigs").
 		Name(ciConfig.Name).
 		SubResource("status").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(ciConfig).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the ciConfig and deletes it. Returns an error if one occurs.
-func (c *ciConfigs) Delete(name string, options *metav1.DeleteOptions) error {
+func (c *ciConfigs) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("ciconfigs").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *ciConfigs) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+func (c *ciConfigs) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("ciconfigs").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched ciConfig.
-func (c *ciConfigs) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.CiConfig, err error) {
+func (c *ciConfigs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.CiConfig, err error) {
 	result = &v1.CiConfig{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("ciconfigs").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

@@ -18,6 +18,7 @@ limitations under the License.
 package v1
 
 import (
+	"context"
 	time "time"
 
 	tessiov1 "github.com/nistal97/crd_controller/pkg/api/tess.io/v1"
@@ -60,13 +61,13 @@ func NewFilteredCiConfigInformer(client versioned.Interface, namespace string, r
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.TessV1().CiConfigs(namespace).List(options)
+				return client.TessV1().CiConfigs(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.TessV1().CiConfigs(namespace).Watch(options)
+				return client.TessV1().CiConfigs(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&tessiov1.CiConfig{},
