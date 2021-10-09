@@ -15,6 +15,7 @@
 .build/
 vendor/
 output/
+github.com/
 
 # IDE
 *.idea
