@@ -13,7 +13,7 @@ spec:
       - name: OWNERS
         value: yuatao,jupeng
       - name: NAMESPACE
-        value: ciaas
+        value: ciaas-test
     master:
       image: ecr.vip.ebayc3.com/ciaas/raptor_nodejs_jenkins:2.204.2.v1
       volumeSize: 50
