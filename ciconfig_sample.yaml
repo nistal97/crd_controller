@@ -1,0 +1,27 @@
+apiVersion: tess.io/v1
+kind: CiConfig
+metadata:
+  name: yuatao-ci-8627
+  namespace: ciaas-test
+spec:
+  hibernate: false
+  source: {}
+  strategy:
+    env:
+      - name: JENKINS_OPTS
+        value: '--logfile=/var/jenkins_home/jenkins.log '
+      - name: OWNERS
+        value: yuatao,jupeng
+      - name: NAMESPACE
+        value: ciaas
+    master:
+      image: ecr.vip.ebayc3.com/ciaas/raptor_nodejs_jenkins:2.204.2.v1
+      volumeSize: 50
+    standardBuild:
+      spec:
+        identifiers:
+          owner: yuatao
+          serviceName: yuatao-ci-8627-jenkins
+        stack:
+          builder: ecr.vip.ebayc3.com/ciaas/builder
+          type: generic_ci
