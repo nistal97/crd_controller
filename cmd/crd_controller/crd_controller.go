@@ -21,6 +21,10 @@ var (
 )
 
 func main() {
+	//uncomment me when debugging
+	//masterURL := "https://api.system.svc.130.tess.io"
+	//kubeconfig := "./kubeconfig"
+
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// set up signals so we handle the first shutdown signal gracefully
