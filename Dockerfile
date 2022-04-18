@@ -2,7 +2,7 @@ FROM hub.tess.io/sherlockio/debian:stretch
 
 RUN mkdir -p /platform
 
-COPY output/crd_controller /bin/crd_controller
+COPY ./output/crd_controller /bin/crd_controller
 
 WORKDIR /platform
 
