@@ -6,7 +6,11 @@ RUN ls -l /workspace/repo/output
 
 RUN ls -l /workspace/repo/output/crd_controller
 
-COPY /workspace/repo/output/crd_controller /bin/crd_controller
+RUN ls -l /bin
+
+WORKDIR /workspace/repo
+
+COPY output/crd_controller /bin/crd_controller
 
 WORKDIR /platform
 
