@@ -4,6 +4,10 @@ RUN mkdir -p /platform
 
 WORKDIR /workspace/repo
 
+RUN ls
+
+RUN ls ./output
+
 COPY ./output/crd_controller /bin/crd_controller
 
 WORKDIR /platform
