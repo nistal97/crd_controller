@@ -2,11 +2,6 @@ FROM hub.tess.io/sherlockio/debian:stretch
 
 RUN mkdir -p /platform
 
-WORKDIR /workspace/repo
+ENTRYPOINT [ "/workspace/repo/output/crd_controller" ]
 
-COPY /workspace/repo/output/crd_controller /bin/crd_controller
-
-WORKDIR /platform
-
-ENTRYPOINT [ "/bin/crd_controller" ]
 CMD []
