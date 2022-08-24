@@ -15,7 +15,7 @@ spec:
       - name: NAMESPACE
         value: ciaas-test
     master:
-      image: ecr.vip.ebayc3.com/ciaas/raptor_nodejs_jenkins:2.204.2.v1
+      image: somedomain.com/ciaas/raptor_nodejs_jenkins:2.204.2.v1
       volumeSize: 50
     standardBuild:
       spec:
@@ -23,5 +23,5 @@ spec:
           owner: yuatao
           serviceName: yuatao-ci-8627-jenkins
         stack:
-          builder: ecr.vip.ebayc3.com/ciaas/builder
+          builder: somedomain.com/ciaas/builder
           type: generic_ci
