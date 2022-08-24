@@ -16,7 +16,7 @@ spec:
       name: crdcontroller
     spec:
       containers:
-        - image: hub.tess.io/ydong/crd_controller:0.1
+        - image: somedomain.com/account/crd_controller:0.1
           imagePullPolicy: Always
           name: crdcontroller
           ports:
